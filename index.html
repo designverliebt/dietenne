@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Die Tenne Panorama</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+#viewer {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  cursor: grab;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+#viewer.dragging {
+  cursor: grabbing;
+}
+
+.track {
+  display: inline-flex;
+  height: 100vh;
+  will-change: transform;
+}
+
+.panorama {
+  height: 100vh;
+  width: auto;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="viewer">
+  <div class="track" id="track">
+    <img class="panorama" id="pano1" src="panorama.jpg" alt="Panorama">
+    <img class="panorama" src="panorama.jpg" alt="">
+  </div>
+</div>
+
+<script>
+const viewer = document.getElementById('viewer');
+const track = document.getElementById('track');
+const pano1 = document.getElementById('pano1');
+
+let position = 0;
+let imageWidth = 0;
+let speed = 0.35; // kleiner = langsamer, größer = schneller
+let isDragging = false;
+let startX = 0;
+let startPosition = 0;
+let resumeTimer = null;
+let autoMove = true;
+
+function updateImageWidth() {
+  imageWidth = pano1.getBoundingClientRect().width;
+}
+
+function render() {
+  if (imageWidth > 0) {
+    while (position <= -imageWidth) {
+      position += imageWidth;
+    }
+    while (position > 0) {
+      position -= imageWidth;
+    }
+    track.style.transform = `translateX(${position}px)`;
+  }
+}
+
+function animate() {
+  if (autoMove && !isDragging) {
+    position -= speed;
+    render();
+  }
+  requestAnimationFrame(animate);
+}
+
+function pauseAutoMove() {
+  autoMove = false;
+  clearTimeout(resumeTimer);
+}
+
+function resumeAutoMoveSoon() {
+  clearTimeout(resumeTimer);
+  resumeTimer = setTimeout(() => {
+    autoMove = true;
+  }, 1800);
+}
+
+function getClientX(event) {
+  if (event.touches && event.touches.length) {
+    return event.touches[0].clientX;
+  }
+  return event.clientX;
+}
+
+function startDrag(event) {
+  isDragging = true;
+  pauseAutoMove();
+  viewer.classList.add('dragging');
+  startX = getClientX(event);
+  startPosition = position;
+}
+
+function moveDrag(event) {
+  if (!isDragging) return;
+  const currentX = getClientX(event);
+  position = startPosition + (currentX - startX);
+  render();
+}
+
+function endDrag() {
+  if (!isDragging) return;
+  isDragging = false;
+  viewer.classList.remove('dragging');
+  resumeAutoMoveSoon();
+}
+
+viewer.addEventListener('mousedown', startDrag);
+window.addEventListener('mousemove', moveDrag);
+window.addEventListener('mouseup', endDrag);
+
+viewer.addEventListener('touchstart', startDrag, { passive: true });
+viewer.addEventListener('touchmove', moveDrag, { passive: true });
+viewer.addEventListener('touchend', endDrag);
+viewer.addEventListener('touchcancel', endDrag);
+
+window.addEventListener('resize', () => {
+  updateImageWidth();
+  render();
+});
+
+pano1.addEventListener('load', () => {
+  updateImageWidth();
+  position = 0;
+  render();
+});
+
+updateImageWidth();
+animate();
+</script>
+
+</body>
+</html>
