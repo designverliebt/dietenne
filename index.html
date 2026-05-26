@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Die Tenne Panorama</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+#viewer {
+  width: 100%;
+  height: 100vh;
+  overflow-x: auto;
+  overflow-y: hidden;
+  cursor: grab;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+#viewer::-webkit-scrollbar {
+  display: none;
+}
+
+#viewer.dragging {
+  cursor: grabbing;
+}
+
+#panorama {
+  height: 100vh;
+  width: auto;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="viewer">
+  <img id="panorama" src="panorama.jpg" alt="Panorama">
+</div>
+
+<script>
+const viewer = document.getElementById('viewer');
+const img = document.getElementById('panorama');
+
+let isDown = false;
+let startX;
+let scrollLeft;
+
+viewer.addEventListener('mousedown', (e) => {
+  isDown = true;
+  viewer.classList.add('dragging');
+  startX = e.pageX - viewer.offsetLeft;
+  scrollLeft = viewer.scrollLeft;
+});
+
+viewer.addEventListener('mouseleave', () => {
+  isDown = false;
+  viewer.classList.remove('dragging');
+});
+
+viewer.addEventListener('mouseup', () => {
+  isDown = false;
+  viewer.classList.remove('dragging');
+});
+
+viewer.addEventListener('mousemove', (e) => {
+  if (!isDown) return;
+  e.preventDefault();
+  const x = e.pageX - viewer.offsetLeft;
+  const walk = (x - startX) * 1.5;
+  viewer.scrollLeft = scrollLeft - walk;
+});
+
+// Startposition mittig setzen
+window.addEventListener('load', () => {
+  viewer.scrollLeft = (img.scrollWidth - viewer.clientWidth) / 2;
+});
+</script>
+
+</body>
+</html>
